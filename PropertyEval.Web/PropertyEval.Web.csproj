@@ -16,7 +16,6 @@
     <ProjectReference Include="..\PropertyEval.Domain\PropertyEval.Domain.csproj" />
     <ProjectReference Include="..\PropertyEval.Application\PropertyEval.Application.csproj" />
     <ProjectReference Include="..\PropertyEval.Infrastructure\PropertyEval.Infrastructure.csproj" />
-    <ProjectReference Include="..\PropertyEval.Endpoints\PropertyEval.Endpoints.csproj" />
   </ItemGroup>
 
 </Project>
