@@ -16,6 +16,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseFastEndpoints();
+app.UseSwaggerGen();
 
 app.UseHttpsRedirection();
 
