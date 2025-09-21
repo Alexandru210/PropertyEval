@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="PropertyEval.Application/PropertyEval.Application.csproj" />
+  <Project Path="PropertyEval.Domain/PropertyEval.Domain.csproj" />
+  <Project Path="PropertyEval.Infrastructure/PropertyEval.Infrastructure.csproj" />
+  <Project Path="PropertyEval.Web/PropertyEval.Web.csproj" />
+</Solution>
