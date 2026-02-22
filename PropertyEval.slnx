@@ -4,6 +4,9 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
   <Project Path="PropertyEval.Application/PropertyEval.Application.csproj" />
   <Project Path="PropertyEval.Domain/PropertyEval.Domain.csproj" />
   <Project Path="PropertyEval.Infrastructure/PropertyEval.Infrastructure.csproj" />
