@@ -1,10 +1,9 @@
-﻿namespace PropertyEval.Domain.Enums
+﻿namespace PropertyEval.Domain.Enums;
+
+public enum ListingStatus
 {
-    public enum ListingStatus
-    {
-        Active,
-        Inactive,
-        Expired,
-        Sold
-    }
+    Active,
+    Inactive,
+    Expired,
+    Sold
 }

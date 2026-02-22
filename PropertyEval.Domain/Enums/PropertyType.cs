@@ -1,8 +1,7 @@
-﻿namespace PropertyEval.Domain.Enums
+﻿namespace PropertyEval.Domain.Enums;
+
+public enum PropertyType
 {
-    public enum PropertyType
-    {
-        Apartment,
-        House
-    }
+    Apartment,
+    House
 }
