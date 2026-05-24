@@ -1,16 +1,19 @@
 ﻿using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Entities;
 using PropertyEval.Infrastructure.Services;
 
 namespace PropertyEval.Web.Endpoints.Users;
 
-public class CreateUserEndpoint : Endpoint<CreateUserRequest, UserResponse>
+public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse>
 {
     private readonly UserService _userService;
+    private readonly AuthenticationService _authenticationService;
 
-    public CreateUserEndpoint(UserService userService)
+    public CreateUserEndpoint(UserService userService, AuthenticationService authenticationService)
     {
         _userService = userService;
+        _authenticationService = authenticationService;
     }
     public override void Configure()
     {
@@ -18,7 +21,7 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, UserResponse>
         AllowAnonymous();
         Description(x => x
             .WithName("CreateUser")
-            .Produces<UserResponse>(StatusCodes.Status201Created)
+            .Produces<CreateUserResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status409Conflict)
             );
@@ -27,13 +30,23 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, UserResponse>
     {
         try
         {
-            var result = await _userService.CreateUserAsync(request, ct);
+            var user = await _userService.CreateUserAsync(request, ct);
 
-            var response = new UserResponse(
-                result.Id,
-                result.FirstName,
-                result.LastName,
-                result.Email
+            // Generate JWT token
+            var token = _authenticationService.GenerateToken(new User
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email
+            });
+
+            var response = new CreateUserResponse(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                token
             );
 
             await Send.CreatedAtAsync<CreateUserEndpoint>(responseBody: response, cancellation: ct);

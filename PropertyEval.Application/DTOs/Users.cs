@@ -23,3 +23,11 @@ public record UserResponse(
     string LastName,
     string Email
 );
+
+public record CreateUserResponse(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Token
+);
