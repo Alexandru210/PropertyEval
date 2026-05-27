@@ -59,6 +59,27 @@ public class UserService
             user.Email
         );
     }
+
+    public async Task<UserResponse> AuthenticateUserAsync(LoginUserRequest request, CancellationToken cancellationToken)
+    {
+        var email = request.Email.Trim();
+
+        var user = await _context.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+        if (user is null || !VerifyPassword(request.Password, user.PasswordHash))
+        {
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        return new UserResponse(
+            user.Id,
+            user.FirstName,
+            user.LastName,
+            user.Email
+        );
+    }
     #endregion
 
     #region Private Methods
@@ -78,6 +99,36 @@ public class UserService
             Iterations,
             Convert.ToBase64String(salt),
             Convert.ToBase64String(hash));
+    }
+
+    private static bool VerifyPassword(string password, string storedHash)
+    {
+        var parts = storedHash.Split('.');
+
+        if (parts.Length != 4 ||
+            parts[0] != PasswordHashVersion ||
+            !int.TryParse(parts[1], out var iterations))
+        {
+            return false;
+        }
+
+        try
+        {
+            var salt = Convert.FromBase64String(parts[2]);
+            var expectedHash = Convert.FromBase64String(parts[3]);
+            var actualHash = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                iterations,
+                HashAlgorithmName.SHA256,
+                expectedHash.Length);
+
+            return CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private static bool IsUniqueConstraintViolation(DbUpdateException exception)

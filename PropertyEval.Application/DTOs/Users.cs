@@ -8,6 +8,11 @@ public record CreateUserRequest(
     string Password
 );
 
+public record LoginUserRequest(
+    string Email,
+    string Password
+);
+
 public record UpdateUserRequest(
     int Id,
     string FirstName,
@@ -25,6 +30,14 @@ public record UserResponse(
 );
 
 public record CreateUserResponse(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Token
+);
+
+public record LoginUserResponse(
     int Id,
     string FirstName,
     string LastName,
