@@ -2,6 +2,7 @@
 using FastEndpoints.Security;
 using PropertyEval.Application.DTOs;
 using PropertyEval.Infrastructure.Services;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace PropertyEval.Web.Endpoints.Users;
@@ -39,10 +40,11 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse
             var token = JwtBearer.CreateToken(options =>
             {
                 options.ExpireAt = DateTime.UtcNow.AddMinutes(_tokenExpirationMinutes);
-                options.User.Claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
-                options.User.Claims.Add(new Claim(ClaimTypes.Email, user.Email));
-                options.User.Claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
-                options.User.Claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
+                options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
+                options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+                options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName));
+                options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName));
+                options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
             });
 
             var response = new CreateUserResponse(
