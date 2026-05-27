@@ -1,20 +1,24 @@
 ﻿using FastEndpoints;
+using FastEndpoints.Security;
 using PropertyEval.Application.DTOs;
-using PropertyEval.Domain.Entities;
 using PropertyEval.Infrastructure.Services;
+using System.Security.Claims;
 
 namespace PropertyEval.Web.Endpoints.Users;
 
 public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse>
 {
     private readonly UserService _userService;
-    private readonly AuthenticationService _authenticationService;
+    private readonly int _tokenExpirationMinutes;
 
-    public CreateUserEndpoint(UserService userService, AuthenticationService authenticationService)
+    public CreateUserEndpoint(UserService userService, IConfiguration configuration)
     {
         _userService = userService;
-        _authenticationService = authenticationService;
+        _tokenExpirationMinutes = int.TryParse(configuration["Jwt:TokenExpirationMinutes"], out var minutes)
+            ? minutes
+            : 60;
     }
+
     public override void Configure()
     {
         Post("/users");
@@ -32,13 +36,13 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse
         {
             var user = await _userService.CreateUserAsync(request, ct);
 
-            // Generate JWT token
-            var token = _authenticationService.GenerateToken(new User
+            var token = JwtBearer.CreateToken(options =>
             {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email
+                options.ExpireAt = DateTime.UtcNow.AddMinutes(_tokenExpirationMinutes);
+                options.User.Claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+                options.User.Claims.Add(new Claim(ClaimTypes.Email, user.Email));
+                options.User.Claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
+                options.User.Claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
             });
 
             var response = new CreateUserResponse(

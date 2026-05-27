@@ -1,10 +1,15 @@
 using FastEndpoints;
+using FastEndpoints.Security;
 using FastEndpoints.Swagger;
 using PropertyEval.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PropertyEval";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PropertyEval";
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -19,16 +24,38 @@ builder.Services.AddCors(options =>
 });
 
 // Register FastEndpoints and Swagger
-builder.Services.AddFastEndpoints();
+builder.Services
+    .AddAuthenticationJwtBearer(
+        signingOptions => signingOptions.SigningKey = jwtSecret,
+        bearerOptions =>
+        {
+            bearerOptions.TokenValidationParameters.ValidateIssuer = true;
+            bearerOptions.TokenValidationParameters.ValidIssuer = jwtIssuer;
+            bearerOptions.TokenValidationParameters.ValidateAudience = true;
+            bearerOptions.TokenValidationParameters.ValidAudience = jwtAudience;
+            bearerOptions.TokenValidationParameters.ValidateLifetime = true;
+            bearerOptions.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(1);
+        })
+    .AddAuthorization()
+    .AddFastEndpoints();
+
+builder.Services.Configure<JwtCreationOptions>(options =>
+{
+    options.SigningKey = jwtSecret;
+    options.Issuer = jwtIssuer;
+    options.Audience = jwtAudience;
+});
+
 builder.Services.SwaggerDocument();
 
 var app = builder.Build();
 
 // Middleware pipeline
+app.UseHttpsRedirection();
 app.UseCors("DefaultPolicy");
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseFastEndpoints();
 app.UseSwaggerGen();
-
-app.UseHttpsRedirection();
 
 app.Run();

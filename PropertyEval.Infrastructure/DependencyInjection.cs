@@ -14,13 +14,8 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-        // Add JWT settings
-        var jwtSecret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
-        var tokenExpiration = int.TryParse(configuration["Jwt:TokenExpirationMinutes"], out var minutes) ? minutes : 60;
-
         // Add services
         services.AddScoped<UserService>();
-        services.AddScoped(_ => new AuthenticationService(jwtSecret, tokenExpiration));
 
         return services;
     }
