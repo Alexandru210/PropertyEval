@@ -44,6 +44,7 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse
                 options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
                 options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName));
                 options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName));
+                options.User.Claims.Add(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", user.Role));
                 options.User.Claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
             });
 
@@ -52,6 +53,7 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse
                 user.FirstName,
                 user.LastName,
                 user.Email,
+                user.Role,
                 token
             );
 

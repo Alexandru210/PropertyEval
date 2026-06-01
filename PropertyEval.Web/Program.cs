@@ -35,6 +35,7 @@ builder.Services
             bearerOptions.TokenValidationParameters.ValidAudience = jwtAudience;
             bearerOptions.TokenValidationParameters.ValidateLifetime = true;
             bearerOptions.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(1);
+            bearerOptions.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
         })
     .AddAuthorization()
     .AddFastEndpoints();
