@@ -10,7 +10,7 @@
 		<PackageReference Include="FastEndpoints" Version="8.1.0" />
 		<PackageReference Include="FastEndpoints.Security" Version="8.1.0" />
 		<PackageReference Include="FastEndpoints.Swagger" Version="8.1.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

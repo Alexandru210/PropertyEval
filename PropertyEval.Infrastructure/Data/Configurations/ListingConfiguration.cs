@@ -19,10 +19,39 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(l => l.AskingPrice)
+            .IsRequired()
+            .HasColumnType("decimal(18,2)");
+
         builder.Property(l => l.Status)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsUnicode(false);
 
         builder.Property(l => l.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
+
+        // Relationships
+        builder.HasOne(l => l.Property)
+            .WithMany(p => p.Listings)
+            .HasForeignKey(l => l.PropertyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(l => l.User)
+            .WithMany(u => u.Listings)
+            .HasForeignKey(l => l.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Indexes
+        builder.HasIndex(l => l.PropertyId);
+
+        builder.HasIndex(l => l.UserId);
+
+        builder.HasIndex(l => l.Status);
+
+        builder.HasIndex(l => l.AskingPrice);
+
+        builder.HasIndex(l => new { l.Status, l.AskingPrice });
     }
 }

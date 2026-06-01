@@ -27,10 +27,6 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         builder.Property(p => p.YearBuilt)
             .IsRequired();
 
-        builder.Property(p => p.Price)
-            .IsRequired()
-            .HasColumnType("decimal(18,2)");
-
         builder.Property(p => p.Description)
             .IsRequired()
             .HasMaxLength(1000);
@@ -46,14 +42,10 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         // Relationships
         builder.HasOne(p => p.Address)
             .WithMany()
-            .HasForeignKey("AddressId")
+            .HasForeignKey(p => p.AddressId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes
         builder.HasIndex(p => p.PropertyType);
-
-        builder.HasIndex(p => p.Price);
-
-        builder.HasIndex(p => new { p.PropertyType, p.Price });
     }
 }
