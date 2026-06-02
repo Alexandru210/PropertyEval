@@ -1,0 +1,55 @@
+using FastEndpoints;
+using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Constants;
+using PropertyEval.Infrastructure.Services;
+
+namespace PropertyEval.Web.Endpoints.Listings;
+
+public class CreateListingEndpoint : Endpoint<CreateListingRequest, ListingResponse>
+{
+    private readonly ListingService _listingService;
+
+    public CreateListingEndpoint(ListingService listingService)
+    {
+        _listingService = listingService;
+    }
+
+    public override void Configure()
+    {
+        Post("/listings");
+        Roles(SystemRoles.Client, SystemRoles.Admin);
+        Description(x => x
+            .WithName("CreateListing")
+            .Produces<ListingResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound));
+    }
+
+    public override async Task HandleAsync(CreateListingRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var userId = User.GetRequiredUserId();
+            var listing = await _listingService.CreateListingAsync(request, userId, ct);
+
+            await Send.CreatedAtAsync(
+                "GetListing",
+                new { id = listing.Id },
+                listing,
+                generateAbsoluteUrl: false,
+                cancellation: ct);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AddError(ex.Message);
+            await Send.ErrorsAsync(StatusCodes.Status401Unauthorized, ct);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            AddError(ex.Message);
+            await Send.ErrorsAsync(StatusCodes.Status404NotFound, ct);
+        }
+    }
+}
