@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<PropertyService>();
         services.AddScoped<ListingService>();
         services.AddScoped<EvaluationService>();
+        services.AddScoped<PropertyValuationService>();
 
         return services;
     }

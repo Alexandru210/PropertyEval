@@ -1,7 +1,6 @@
 using FastEndpoints;
 using FluentValidation;
 using PropertyEval.Application.DTOs;
-using PropertyEval.Domain.Enums;
 
 namespace PropertyEval.Web.Endpoints.Evaluations;
 
@@ -12,19 +11,32 @@ public class CreateEvaluationValidator : Validator<CreateEvaluationRequest>
         RuleFor(x => x.PropertyId)
             .GreaterThan(0).WithMessage("Property id must be valid.");
 
-        RuleFor(x => x.EvaluatedValue)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.EvaluatedValue is not null)
-            .WithMessage("Evaluated value cannot be negative.");
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000).WithMessage("Notes cannot exceed 2000 characters.");
+    }
+}
+
+public class AssignEvaluationValidator : Validator<AssignEvaluationRequest>
+{
+    public AssignEvaluationValidator()
+    {
+        RuleFor(x => x.Id)
+            .GreaterThan(0).WithMessage("Evaluation id must be valid.");
+
+        RuleFor(x => x.EvaluatorUserId)
+            .GreaterThan(0).WithMessage("Evaluator user id must be valid.");
+    }
+}
+
+public class CompleteEvaluationValidator : Validator<CompleteEvaluationRequest>
+{
+    public CompleteEvaluationValidator()
+    {
+        RuleFor(x => x.Id)
+            .GreaterThan(0).WithMessage("Evaluation id must be valid.");
 
         RuleFor(x => x.EvaluatedValue)
-            .NotNull()
-            .GreaterThan(0)
-            .When(x => x.Status == EvaluationStatus.Completed)
-            .WithMessage("Completed evaluations must include a positive evaluated value.");
-
-        RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Evaluation status is not supported.");
+            .GreaterThan(0).WithMessage("Completed evaluations must include a positive evaluated value.");
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000).WithMessage("Notes cannot exceed 2000 characters.");
@@ -49,10 +61,15 @@ public class GetEvaluationsValidator : Validator<GetEvaluationsRequest>
             .When(x => x.PropertyId is not null)
             .WithMessage("Property id must be valid.");
 
-        RuleFor(x => x.UserId)
+        RuleFor(x => x.RequestedByUserId)
             .GreaterThan(0)
-            .When(x => x.UserId is not null)
-            .WithMessage("User id must be valid.");
+            .When(x => x.RequestedByUserId is not null)
+            .WithMessage("Requester user id must be valid.");
+
+        RuleFor(x => x.EvaluatorUserId)
+            .GreaterThan(0)
+            .When(x => x.EvaluatorUserId is not null)
+            .WithMessage("Evaluator user id must be valid.");
 
         RuleFor(x => x.Status)
             .IsInEnum()

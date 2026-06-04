@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Constants;
 using PropertyEval.Domain.Entities;
+using PropertyEval.Domain.Enums;
 using PropertyEval.Infrastructure.Data;
 
 namespace PropertyEval.Infrastructure.Services;
@@ -14,7 +16,10 @@ public class EvaluationService
         _context = context;
     }
 
-    public async Task<EvaluationResponse> CreateEvaluationAsync(CreateEvaluationRequest request, int userId, CancellationToken cancellationToken)
+    public async Task<EvaluationResponse> CreateEvaluationAsync(
+        CreateEvaluationRequest request,
+        int requestedByUserId,
+        CancellationToken cancellationToken)
     {
         var property = await _context.Properties
             .Include(p => p.Address)
@@ -25,10 +30,10 @@ public class EvaluationService
             throw new KeyNotFoundException("Property was not found.");
         }
 
-        var user = await _context.Users
-            .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var requestedByUser = await _context.Users
+            .SingleOrDefaultAsync(u => u.Id == requestedByUserId, cancellationToken);
 
-        if (user is null)
+        if (requestedByUser is null)
         {
             throw new KeyNotFoundException("User was not found.");
         }
@@ -38,12 +43,12 @@ public class EvaluationService
         {
             PropertyId = property.Id,
             Property = property,
-            UserId = user.Id,
-            User = user,
-            EvaluatedValue = request.EvaluatedValue ?? 0m,
-            Status = request.Status,
+            RequestedByUserId = requestedByUser.Id,
+            RequestedByUser = requestedByUser,
+            EvaluatedValue = 0m,
+            Status = EvaluationStatus.Pending,
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-            EvaluationDate = request.EvaluationDate ?? now,
+            EvaluationDate = now,
             CreatedAt = now
         };
 
@@ -53,14 +58,101 @@ public class EvaluationService
         return ResponseMapper.ToResponse(evaluation);
     }
 
-    public async Task<EvaluationResponse> GetEvaluationAsync(int id, int userId, bool canViewAllEvaluations, CancellationToken cancellationToken)
+    public async Task<EvaluationResponse> AssignEvaluationAsync(
+        int evaluationId,
+        int evaluatorUserId,
+        CancellationToken cancellationToken)
     {
-        var query = CreateEvaluationQuery();
+        var evaluation = await CreateEvaluationQuery(asNoTracking: false)
+            .SingleOrDefaultAsync(e => e.Id == evaluationId, cancellationToken);
 
-        if (!canViewAllEvaluations)
+        if (evaluation is null)
         {
-            query = query.Where(e => e.UserId == userId);
+            throw new KeyNotFoundException("Evaluation was not found.");
         }
+
+        if (evaluation.Status == EvaluationStatus.Completed)
+        {
+            throw new InvalidOperationException("Completed evaluations cannot be reassigned.");
+        }
+
+        var evaluator = await _context.Users
+            .Include(u => u.Role)
+            .SingleOrDefaultAsync(u => u.Id == evaluatorUserId, cancellationToken);
+
+        if (evaluator is null)
+        {
+            throw new KeyNotFoundException("Evaluator user was not found.");
+        }
+
+        if (evaluator.Role.Name != SystemRoles.Evaluator)
+        {
+            throw new InvalidOperationException("Assigned user must have the Evaluator role.");
+        }
+
+        evaluation.EvaluatorUserId = evaluator.Id;
+        evaluation.EvaluatorUser = evaluator;
+        evaluation.Status = EvaluationStatus.InProgress;
+        evaluation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return ResponseMapper.ToResponse(evaluation);
+    }
+
+    public async Task<EvaluationResponse> CompleteEvaluationAsync(
+        CompleteEvaluationRequest request,
+        int userId,
+        bool canCompleteAnyEvaluation,
+        CancellationToken cancellationToken)
+    {
+        if (request.EvaluatedValue <= 0m)
+        {
+            throw new InvalidOperationException("Completed evaluations must include a positive evaluated value.");
+        }
+
+        var query = CreateEvaluationQuery(asNoTracking: false);
+
+        if (!canCompleteAnyEvaluation)
+        {
+            query = query.Where(e => e.EvaluatorUserId == userId);
+        }
+
+        var evaluation = await query.SingleOrDefaultAsync(e => e.Id == request.Id, cancellationToken);
+
+        if (evaluation is null)
+        {
+            throw new KeyNotFoundException("Evaluation was not found.");
+        }
+
+        var now = DateTime.UtcNow;
+        evaluation.EvaluatedValue = request.EvaluatedValue;
+        evaluation.Status = EvaluationStatus.Completed;
+        evaluation.EvaluationDate = request.EvaluationDate ?? now;
+        evaluation.UpdatedAt = now;
+
+        if (request.Notes is not null)
+        {
+            evaluation.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return ResponseMapper.ToResponse(evaluation);
+    }
+
+    public async Task<EvaluationResponse> GetEvaluationAsync(
+        int id,
+        int userId,
+        bool canViewAllEvaluations,
+        bool canViewAssignedEvaluations,
+        CancellationToken cancellationToken)
+    {
+        var query = ApplyEvaluationAccess(
+            CreateEvaluationQuery(),
+            userId,
+            canViewAllEvaluations,
+            canViewAssignedEvaluations);
 
         var evaluation = await query
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -77,17 +169,23 @@ public class EvaluationService
         GetEvaluationsRequest request,
         int userId,
         bool canViewAllEvaluations,
+        bool canViewAssignedEvaluations,
         CancellationToken cancellationToken)
     {
-        var query = CreateEvaluationQuery();
+        var query = ApplyEvaluationAccess(
+            CreateEvaluationQuery(),
+            userId,
+            canViewAllEvaluations,
+            canViewAssignedEvaluations);
 
-        if (!canViewAllEvaluations)
+        if (canViewAllEvaluations && request.RequestedByUserId is not null)
         {
-            query = query.Where(e => e.UserId == userId);
+            query = query.Where(e => e.RequestedByUserId == request.RequestedByUserId);
         }
-        else if (request.UserId is not null)
+
+        if (canViewAllEvaluations && request.EvaluatorUserId is not null)
         {
-            query = query.Where(e => e.UserId == request.UserId);
+            query = query.Where(e => e.EvaluatorUserId == request.EvaluatorUserId);
         }
 
         if (request.PropertyId is not null)
@@ -123,12 +221,33 @@ public class EvaluationService
         return evaluations.Select(ResponseMapper.ToResponse).ToList();
     }
 
-    private IQueryable<Evaluation> CreateEvaluationQuery()
+    private static IQueryable<Evaluation> ApplyEvaluationAccess(
+        IQueryable<Evaluation> query,
+        int userId,
+        bool canViewAllEvaluations,
+        bool canViewAssignedEvaluations)
     {
-        return _context.Evaluations
-            .Include(e => e.User)
+        if (canViewAllEvaluations)
+        {
+            return query;
+        }
+
+        if (canViewAssignedEvaluations)
+        {
+            return query.Where(e => e.EvaluatorUserId == userId);
+        }
+
+        return query.Where(e => e.RequestedByUserId == userId);
+    }
+
+    private IQueryable<Evaluation> CreateEvaluationQuery(bool asNoTracking = true)
+    {
+        var query = _context.Evaluations
+            .Include(e => e.RequestedByUser)
+            .Include(e => e.EvaluatorUser)
             .Include(e => e.Property)
-            .ThenInclude(p => p.Address)
-            .AsNoTracking();
+            .ThenInclude(p => p.Address);
+
+        return asNoTracking ? query.AsNoTracking() : query;
     }
 }

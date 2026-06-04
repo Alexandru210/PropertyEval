@@ -61,6 +61,15 @@ public class GetPropertyValidator : Validator<GetPropertyRequest>
     }
 }
 
+public class GetPropertyValuationValidator : Validator<GetPropertyValuationRequest>
+{
+    public GetPropertyValuationValidator()
+    {
+        RuleFor(x => x.Id)
+            .GreaterThan(0).WithMessage("Property id must be valid.");
+    }
+}
+
 public class GetPropertiesValidator : Validator<GetPropertiesRequest>
 {
     public GetPropertiesValidator()

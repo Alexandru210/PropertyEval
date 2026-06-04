@@ -15,6 +15,6 @@ public class UpdateUserRoleValidator : Validator<UpdateUserRoleRequest>
         RuleFor(x => x.Role)
             .NotEmpty().WithMessage("Role is required.")
             .Must(role => SystemRoles.AssignableRoles.Contains(role))
-            .WithMessage("Role must be Client or Admin.");
+            .WithMessage("Role must be Client, Evaluator, or Admin.");
     }
 }

@@ -5,41 +5,41 @@ using PropertyEval.Infrastructure.Services;
 
 namespace PropertyEval.Web.Endpoints.Evaluations;
 
-public class CreateEvaluationEndpoint : Endpoint<CreateEvaluationRequest, EvaluationResponse>
+public class CompleteEvaluationEndpoint : Endpoint<CompleteEvaluationRequest, EvaluationResponse>
 {
     private readonly EvaluationService _evaluationService;
 
-    public CreateEvaluationEndpoint(EvaluationService evaluationService)
+    public CompleteEvaluationEndpoint(EvaluationService evaluationService)
     {
         _evaluationService = evaluationService;
     }
 
     public override void Configure()
     {
-        Post("/evaluations");
-        Roles(SystemRoles.Client, SystemRoles.Admin);
+        Patch("/evaluations/{id}");
+        Roles(SystemRoles.Evaluator, SystemRoles.Admin);
         Description(x => x
-            .WithName("CreateEvaluation")
-            .Produces<EvaluationResponse>(StatusCodes.Status201Created)
+            .WithName("CompleteEvaluation")
+            .Produces<EvaluationResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound));
     }
 
-    public override async Task HandleAsync(CreateEvaluationRequest request, CancellationToken ct)
+    public override async Task HandleAsync(CompleteEvaluationRequest request, CancellationToken ct)
     {
         try
         {
             var userId = User.GetRequiredUserId();
-            var evaluation = await _evaluationService.CreateEvaluationAsync(request, userId, ct);
+            var canCompleteAnyEvaluation = User.IsInRole(SystemRoles.Admin);
+            var evaluation = await _evaluationService.CompleteEvaluationAsync(
+                request,
+                userId,
+                canCompleteAnyEvaluation,
+                ct);
 
-            await Send.CreatedAtAsync(
-                "GetEvaluation",
-                new { id = evaluation.Id },
-                evaluation,
-                generateAbsoluteUrl: false,
-                cancellation: ct);
+            await Send.OkAsync(evaluation, ct);
         }
         catch (UnauthorizedAccessException ex)
         {

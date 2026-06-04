@@ -11,5 +11,6 @@ public class User
     public Role Role { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public ICollection<Listing> Listings { get; set; } = [];
-    public ICollection<Evaluation> Evaluations { get; set; } = [];
+    public ICollection<Evaluation> RequestedEvaluations { get; set; } = [];
+    public ICollection<Evaluation> AssignedEvaluations { get; set; } = [];
 }

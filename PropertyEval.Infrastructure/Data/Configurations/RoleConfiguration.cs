@@ -40,6 +40,13 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             },
             new Role
             {
+                Id = SystemRoles.EvaluatorId,
+                Name = SystemRoles.Evaluator,
+                Description = "Evaluator role for handling property valuation requests.",
+                CreatedAt = SeededAt
+            },
+            new Role
+            {
                 Id = SystemRoles.AdminId,
                 Name = SystemRoles.Admin,
                 Description = "Administrator role with full management access.",

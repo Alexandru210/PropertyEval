@@ -36,13 +36,19 @@ public class EvaluationConfiguration : IEntityTypeConfiguration<Evaluation>
             .HasForeignKey(e => e.PropertyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(e => e.User)
-            .WithMany(u => u.Evaluations)
-            .HasForeignKey(e => e.UserId)
+        builder.HasOne(e => e.RequestedByUser)
+            .WithMany(u => u.RequestedEvaluations)
+            .HasForeignKey(e => e.RequestedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.EvaluatorUser)
+            .WithMany(u => u.AssignedEvaluations)
+            .HasForeignKey(e => e.EvaluatorUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.PropertyId);
-        builder.HasIndex(e => e.UserId);
+        builder.HasIndex(e => e.RequestedByUserId);
+        builder.HasIndex(e => e.EvaluatorUserId);
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.EvaluationDate);
     }

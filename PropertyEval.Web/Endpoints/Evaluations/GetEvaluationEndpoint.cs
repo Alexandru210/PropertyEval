@@ -17,7 +17,7 @@ public class GetEvaluationEndpoint : Endpoint<GetEvaluationRequest, EvaluationRe
     public override void Configure()
     {
         Get("/evaluations/{id}");
-        Roles(SystemRoles.Client, SystemRoles.Admin);
+        Roles(SystemRoles.Client, SystemRoles.Evaluator, SystemRoles.Admin);
         Description(x => x
             .WithName("GetEvaluation")
             .Produces<EvaluationResponse>(StatusCodes.Status200OK)
@@ -32,7 +32,13 @@ public class GetEvaluationEndpoint : Endpoint<GetEvaluationRequest, EvaluationRe
         {
             var userId = User.GetRequiredUserId();
             var canViewAllEvaluations = User.IsInRole(SystemRoles.Admin);
-            var evaluation = await _evaluationService.GetEvaluationAsync(request.Id, userId, canViewAllEvaluations, ct);
+            var canViewAssignedEvaluations = User.IsInRole(SystemRoles.Evaluator);
+            var evaluation = await _evaluationService.GetEvaluationAsync(
+                request.Id,
+                userId,
+                canViewAllEvaluations,
+                canViewAssignedEvaluations,
+                ct);
 
             await Send.OkAsync(evaluation, ct);
         }

@@ -52,8 +52,10 @@ internal static class ResponseMapper
         return new EvaluationResponse(
             evaluation.Id,
             evaluation.PropertyId,
-            evaluation.UserId,
-            GetFullName(evaluation.User),
+            evaluation.RequestedByUserId,
+            GetFullName(evaluation.RequestedByUser),
+            evaluation.EvaluatorUserId,
+            GetOptionalFullName(evaluation.EvaluatorUser),
             evaluation.EvaluatedValue,
             evaluation.Status,
             evaluation.Notes,
@@ -67,5 +69,10 @@ internal static class ResponseMapper
     private static string GetFullName(User user)
     {
         return $"{user.FirstName} {user.LastName}".Trim();
+    }
+
+    private static string? GetOptionalFullName(User? user)
+    {
+        return user is null ? null : GetFullName(user);
     }
 }
