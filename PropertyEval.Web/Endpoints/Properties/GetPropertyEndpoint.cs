@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
 namespace PropertyEval.Web.Endpoints.Properties;
@@ -17,6 +18,11 @@ public class GetPropertyEndpoint : Endpoint<GetPropertyRequest, PropertyResponse
     {
         Get("/properties/{id}");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Get property details";
+            s.Description = "Returns a public active-listing property, or an owner/admin-visible property when authenticated.";
+        });
         Description(x => x
             .WithName("GetProperty")
             .Produces<PropertyResponse>(StatusCodes.Status200OK)
@@ -27,7 +33,14 @@ public class GetPropertyEndpoint : Endpoint<GetPropertyRequest, PropertyResponse
     {
         try
         {
-            var property = await _propertyService.GetPropertyAsync(request.Id, ct);
+            int? currentUserId = User.Identity?.IsAuthenticated == true
+                ? User.GetRequiredUserId()
+                : null;
+            var property = await _propertyService.GetPropertyAsync(
+                request.Id,
+                currentUserId,
+                User.IsInRole(SystemRoles.Admin),
+                ct);
 
             await Send.OkAsync(property, ct);
         }

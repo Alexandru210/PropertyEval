@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Entities;
+using PropertyEval.Domain.Enums;
 using PropertyEval.Infrastructure.Data;
 
 namespace PropertyEval.Infrastructure.Services;
@@ -14,7 +16,11 @@ public class ListingService
         _context = context;
     }
 
-    public async Task<ListingResponse> CreateListingAsync(CreateListingRequest request, int userId, CancellationToken cancellationToken)
+    public async Task<ListingResponse> CreateListingAsync(
+        CreateListingRequest request,
+        int userId,
+        bool canUseAnyProperty,
+        CancellationToken cancellationToken)
     {
         var property = await _context.Properties
             .Include(p => p.Address)
@@ -23,6 +29,11 @@ public class ListingService
         if (property is null)
         {
             throw new KeyNotFoundException("Property was not found.");
+        }
+
+        if (!canUseAnyProperty && property.OwnerUserId != userId)
+        {
+            throw new ForbiddenAccessException("You can only create listings for properties you created.");
         }
 
         var user = await _context.Users
@@ -52,10 +63,14 @@ public class ListingService
         return ResponseMapper.ToResponse(listing);
     }
 
-    public async Task<ListingResponse> GetListingAsync(int id, CancellationToken cancellationToken)
+    public async Task<ListingResponse> GetListingAsync(
+        int id,
+        int? currentUserId,
+        bool canViewAllListings,
+        CancellationToken cancellationToken)
     {
-        var listing = await CreateListingQuery()
-            .SingleOrDefaultAsync(l => l.Id == id, cancellationToken);
+        var query = ApplyListingAccess(CreateListingQuery(), currentUserId, canViewAllListings);
+        var listing = await query.SingleOrDefaultAsync(l => l.Id == id, cancellationToken);
 
         if (listing is null)
         {
@@ -65,9 +80,13 @@ public class ListingService
         return ResponseMapper.ToResponse(listing);
     }
 
-    public async Task<IReadOnlyList<ListingResponse>> GetListingsAsync(GetListingsRequest request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ListingResponse>> GetListingsAsync(
+        GetListingsRequest request,
+        int? currentUserId,
+        bool canViewAllListings,
+        CancellationToken cancellationToken)
     {
-        var query = CreateListingQuery();
+        var query = ApplyListingAccess(CreateListingQuery(), currentUserId, canViewAllListings);
 
         if (request.PropertyId is not null)
         {
@@ -114,5 +133,20 @@ public class ListingService
             .Include(l => l.Property)
             .ThenInclude(p => p.Address)
             .AsNoTracking();
+    }
+
+    private static IQueryable<Listing> ApplyListingAccess(
+        IQueryable<Listing> query,
+        int? currentUserId,
+        bool canViewAllListings)
+    {
+        if (canViewAllListings)
+        {
+            return query;
+        }
+
+        return currentUserId is null
+            ? query.Where(l => l.Status == ListingStatus.Active)
+            : query.Where(l => l.Status == ListingStatus.Active || l.UserId == currentUserId.Value);
     }
 }

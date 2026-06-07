@@ -18,6 +18,11 @@ public class GetEvaluationEndpoint : Endpoint<GetEvaluationRequest, EvaluationRe
     {
         Get("/evaluations/{id}");
         Roles(SystemRoles.Client, SystemRoles.Evaluator, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Get evaluation details";
+            s.Description = "Returns one evaluation visible to the requester, assigned evaluator, or an administrator.";
+        });
         Description(x => x
             .WithName("GetEvaluation")
             .Produces<EvaluationResponse>(StatusCodes.Status200OK)

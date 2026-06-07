@@ -24,6 +24,11 @@ public class CreateUserEndpoint : Endpoint<CreateUserRequest, CreateUserResponse
     {
         Post("/users");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Register a new user";
+            s.Description = "Creates a client account and returns an authentication token for immediate sign-in.";
+        });
         Description(x => x
             .WithName("CreateUser")
             .Produces<CreateUserResponse>(StatusCodes.Status201Created)

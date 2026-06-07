@@ -5,6 +5,8 @@ namespace PropertyEval.Domain.Entities;
 public class Property
 {
     public int Id { get; set; }
+    public int? OwnerUserId { get; set; }
+    public User? OwnerUser { get; set; }
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
     public PropertyType PropertyType { get; set; }

@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
 namespace PropertyEval.Web.Endpoints.Listings;
@@ -17,6 +18,11 @@ public class GetListingsEndpoint : Endpoint<GetListingsRequest, IReadOnlyList<Li
     {
         Get("/listings");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Search listings";
+            s.Description = "Returns paged listings filtered by property, seller, status, and asking price within the caller's access.";
+        });
         Description(x => x
             .WithName("GetListings")
             .Produces<IReadOnlyList<ListingResponse>>(StatusCodes.Status200OK)
@@ -25,7 +31,14 @@ public class GetListingsEndpoint : Endpoint<GetListingsRequest, IReadOnlyList<Li
 
     public override async Task HandleAsync(GetListingsRequest request, CancellationToken ct)
     {
-        var listings = await _listingService.GetListingsAsync(request, ct);
+        int? currentUserId = User.Identity?.IsAuthenticated == true
+            ? User.GetRequiredUserId()
+            : null;
+        var listings = await _listingService.GetListingsAsync(
+            request,
+            currentUserId,
+            User.IsInRole(SystemRoles.Admin),
+            ct);
 
         await Send.OkAsync(listings, ct);
     }

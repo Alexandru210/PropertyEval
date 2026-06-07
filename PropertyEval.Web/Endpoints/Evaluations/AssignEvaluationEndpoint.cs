@@ -18,6 +18,11 @@ public class AssignEvaluationEndpoint : Endpoint<AssignEvaluationRequest, Evalua
     {
         Post("/evaluations/{id}/assign");
         Roles(SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Assign an evaluation";
+            s.Description = "Assigns a pending or in-progress evaluation request to a user with the Evaluator role.";
+        });
         Description(x => x
             .WithName("AssignEvaluation")
             .Produces<EvaluationResponse>(StatusCodes.Status200OK)

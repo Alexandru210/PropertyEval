@@ -18,6 +18,11 @@ public class GetEvaluationsEndpoint : Endpoint<GetEvaluationsRequest, IReadOnlyL
     {
         Get("/evaluations");
         Roles(SystemRoles.Client, SystemRoles.Evaluator, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Search evaluations";
+            s.Description = "Returns paged evaluation requests filtered by property, user, evaluator, status, and date range.";
+        });
         Description(x => x
             .WithName("GetEvaluations")
             .Produces<IReadOnlyList<EvaluationResponse>>(StatusCodes.Status200OK)

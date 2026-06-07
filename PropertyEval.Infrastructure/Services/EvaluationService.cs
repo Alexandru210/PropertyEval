@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Constants;
 using PropertyEval.Domain.Entities;
 using PropertyEval.Domain.Enums;
@@ -19,6 +20,7 @@ public class EvaluationService
     public async Task<EvaluationResponse> CreateEvaluationAsync(
         CreateEvaluationRequest request,
         int requestedByUserId,
+        bool canUseAnyProperty,
         CancellationToken cancellationToken)
     {
         var property = await _context.Properties
@@ -28,6 +30,11 @@ public class EvaluationService
         if (property is null)
         {
             throw new KeyNotFoundException("Property was not found.");
+        }
+
+        if (!canUseAnyProperty && property.OwnerUserId != requestedByUserId)
+        {
+            throw new ForbiddenAccessException("You can only request evaluations for properties you created.");
         }
 
         var requestedByUser = await _context.Users

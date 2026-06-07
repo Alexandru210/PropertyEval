@@ -18,6 +18,11 @@ public class CreatePropertyEndpoint : Endpoint<CreatePropertyRequest, PropertyRe
     {
         Post("/properties");
         Roles(SystemRoles.Client, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Create a property";
+            s.Description = "Creates property details for the authenticated user so it can be listed or evaluated.";
+        });
         Description(x => x
             .WithName("CreateProperty")
             .Produces<PropertyResponse>(StatusCodes.Status201Created)
@@ -28,7 +33,8 @@ public class CreatePropertyEndpoint : Endpoint<CreatePropertyRequest, PropertyRe
 
     public override async Task HandleAsync(CreatePropertyRequest request, CancellationToken ct)
     {
-        var property = await _propertyService.CreatePropertyAsync(request, ct);
+        var userId = User.GetRequiredUserId();
+        var property = await _propertyService.CreatePropertyAsync(request, userId, ct);
 
         await Send.CreatedAtAsync(
             "GetProperty",

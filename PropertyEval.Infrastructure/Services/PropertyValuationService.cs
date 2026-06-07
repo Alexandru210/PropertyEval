@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Entities;
 using PropertyEval.Domain.Enums;
 using PropertyEval.Infrastructure.Data;
@@ -20,16 +21,26 @@ public class PropertyValuationService
         _context = context;
     }
 
-    public async Task<PropertyValuationResponse> PredictPropertyValueAsync(int propertyId, CancellationToken cancellationToken)
+    public async Task<PropertyValuationResponse> PredictPropertyValueAsync(
+        int propertyId,
+        int userId,
+        bool canValueAnyProperty,
+        CancellationToken cancellationToken)
     {
         var property = await _context.Properties
             .Include(p => p.Address)
+            .Include(p => p.Listings)
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.Id == propertyId, cancellationToken);
 
         if (property is null)
         {
             throw new KeyNotFoundException("Property was not found.");
+        }
+
+        if (!canValueAnyProperty && property.OwnerUserId != userId && !HasActiveListing(property))
+        {
+            throw new ForbiddenAccessException("You can only value public listings or properties you created.");
         }
 
         return await PredictPropertyValueAsync(property, cancellationToken);
@@ -160,6 +171,11 @@ public class PropertyValuationService
     private static double CleanMetric(double value)
     {
         return double.IsNaN(value) || double.IsInfinity(value) ? 0d : value;
+    }
+
+    private static bool HasActiveListing(Property property)
+    {
+        return property.Listings.Any(l => l.Status == ListingStatus.Active);
     }
 }
 

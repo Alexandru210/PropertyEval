@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
 namespace PropertyEval.Web.Endpoints.Listings;
@@ -17,6 +18,11 @@ public class GetListingEndpoint : Endpoint<GetListingRequest, ListingResponse>
     {
         Get("/listings/{id}");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Get listing details";
+            s.Description = "Returns active listings publicly and also returns the current user's own inactive listings.";
+        });
         Description(x => x
             .WithName("GetListing")
             .Produces<ListingResponse>(StatusCodes.Status200OK)
@@ -27,7 +33,14 @@ public class GetListingEndpoint : Endpoint<GetListingRequest, ListingResponse>
     {
         try
         {
-            var listing = await _listingService.GetListingAsync(request.Id, ct);
+            int? currentUserId = User.Identity?.IsAuthenticated == true
+                ? User.GetRequiredUserId()
+                : null;
+            var listing = await _listingService.GetListingAsync(
+                request.Id,
+                currentUserId,
+                User.IsInRole(SystemRoles.Admin),
+                ct);
 
             await Send.OkAsync(listing, ct);
         }

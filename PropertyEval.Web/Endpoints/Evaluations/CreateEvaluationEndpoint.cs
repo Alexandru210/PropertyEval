@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
@@ -18,6 +19,11 @@ public class CreateEvaluationEndpoint : Endpoint<CreateEvaluationRequest, Evalua
     {
         Post("/evaluations");
         Roles(SystemRoles.Client, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Request an evaluation";
+            s.Description = "Creates a valuation review request for a property owned by the user, with admins allowed to use any property.";
+        });
         Description(x => x
             .WithName("CreateEvaluation")
             .Produces<EvaluationResponse>(StatusCodes.Status201Created)
@@ -32,7 +38,11 @@ public class CreateEvaluationEndpoint : Endpoint<CreateEvaluationRequest, Evalua
         try
         {
             var userId = User.GetRequiredUserId();
-            var evaluation = await _evaluationService.CreateEvaluationAsync(request, userId, ct);
+            var evaluation = await _evaluationService.CreateEvaluationAsync(
+                request,
+                userId,
+                User.IsInRole(SystemRoles.Admin),
+                ct);
 
             await Send.CreatedAtAsync(
                 "GetEvaluation",
@@ -55,6 +65,11 @@ public class CreateEvaluationEndpoint : Endpoint<CreateEvaluationRequest, Evalua
         {
             AddError(ex.Message);
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, ct);
+        }
+        catch (ForbiddenAccessException ex)
+        {
+            AddError(ex.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, ct);
         }
     }
 }

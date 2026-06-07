@@ -18,6 +18,11 @@ public class UpdateUserRoleEndpoint : Endpoint<UpdateUserRoleRequest, UserRespon
     {
         Patch("/users/{id}/role");
         Roles(SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Update a user role";
+            s.Description = "Allows an administrator to assign a supported role to an existing user.";
+        });
         Description(x => x
             .WithName("UpdateUserRole")
             .Produces<UserResponse>(StatusCodes.Status200OK)

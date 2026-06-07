@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
@@ -18,6 +19,11 @@ public class GetPropertyValuationEndpoint : Endpoint<GetPropertyValuationRequest
     {
         Get("/properties/{id}/valuation");
         Roles(SystemRoles.Client, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Estimate property value";
+            s.Description = "Runs the valuation model for a property the user owns, an active listing, or any property for admins.";
+        });
         Description(x => x
             .WithName("GetPropertyValuation")
             .Produces<PropertyValuationResponse>(StatusCodes.Status200OK)
@@ -31,7 +37,12 @@ public class GetPropertyValuationEndpoint : Endpoint<GetPropertyValuationRequest
     {
         try
         {
-            var valuation = await _valuationService.PredictPropertyValueAsync(request.Id, ct);
+            var userId = User.GetRequiredUserId();
+            var valuation = await _valuationService.PredictPropertyValueAsync(
+                request.Id,
+                userId,
+                User.IsInRole(SystemRoles.Admin),
+                ct);
 
             await Send.OkAsync(valuation, ct);
         }
@@ -44,6 +55,11 @@ public class GetPropertyValuationEndpoint : Endpoint<GetPropertyValuationRequest
         {
             AddError(ex.Message);
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, ct);
+        }
+        catch (ForbiddenAccessException ex)
+        {
+            AddError(ex.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, ct);
         }
     }
 }

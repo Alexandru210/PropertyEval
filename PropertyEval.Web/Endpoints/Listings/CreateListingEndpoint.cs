@@ -1,5 +1,6 @@
 using FastEndpoints;
 using PropertyEval.Application.DTOs;
+using PropertyEval.Domain.Common;
 using PropertyEval.Domain.Constants;
 using PropertyEval.Infrastructure.Services;
 
@@ -18,6 +19,11 @@ public class CreateListingEndpoint : Endpoint<CreateListingRequest, ListingRespo
     {
         Post("/listings");
         Roles(SystemRoles.Client, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Create a listing";
+            s.Description = "Publishes or drafts a listing for a property owned by the user, with admins allowed to use any property.";
+        });
         Description(x => x
             .WithName("CreateListing")
             .Produces<ListingResponse>(StatusCodes.Status201Created)
@@ -32,7 +38,11 @@ public class CreateListingEndpoint : Endpoint<CreateListingRequest, ListingRespo
         try
         {
             var userId = User.GetRequiredUserId();
-            var listing = await _listingService.CreateListingAsync(request, userId, ct);
+            var listing = await _listingService.CreateListingAsync(
+                request,
+                userId,
+                User.IsInRole(SystemRoles.Admin),
+                ct);
 
             await Send.CreatedAtAsync(
                 "GetListing",
@@ -50,6 +60,11 @@ public class CreateListingEndpoint : Endpoint<CreateListingRequest, ListingRespo
         {
             AddError(ex.Message);
             await Send.ErrorsAsync(StatusCodes.Status404NotFound, ct);
+        }
+        catch (ForbiddenAccessException ex)
+        {
+            AddError(ex.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, ct);
         }
     }
 }

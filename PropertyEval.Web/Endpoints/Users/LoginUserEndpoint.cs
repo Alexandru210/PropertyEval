@@ -24,6 +24,11 @@ public class LoginUserEndpoint : Endpoint<LoginUserRequest, LoginUserResponse>
     {
         Post("/users/login");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Sign in a user";
+            s.Description = "Authenticates a user with email and password and returns a JWT bearer token.";
+        });
         Description(x => x
             .WithName("LoginUser")
             .Produces<LoginUserResponse>(StatusCodes.Status200OK)

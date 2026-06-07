@@ -17,6 +17,11 @@ public class GetPropertiesEndpoint : Endpoint<GetPropertiesRequest, IReadOnlyLis
     {
         Get("/properties");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Search public properties";
+            s.Description = "Returns active-listed properties matching optional type, location, size, and room filters.";
+        });
         Description(x => x
             .WithName("GetProperties")
             .Produces<IReadOnlyList<PropertyResponse>>(StatusCodes.Status200OK)

@@ -45,7 +45,14 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
             .HasForeignKey(p => p.AddressId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(p => p.OwnerUser)
+            .WithMany(u => u.Properties)
+            .HasForeignKey(p => p.OwnerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Indexes
+        builder.HasIndex(p => p.OwnerUserId);
+
         builder.HasIndex(p => p.PropertyType);
     }
 }

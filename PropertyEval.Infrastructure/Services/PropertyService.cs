@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PropertyEval.Application.DTOs;
 using PropertyEval.Domain.Entities;
+using PropertyEval.Domain.Enums;
 using PropertyEval.Infrastructure.Data;
 
 namespace PropertyEval.Infrastructure.Services;
@@ -14,7 +15,10 @@ public class PropertyService
         _context = context;
     }
 
-    public async Task<PropertyResponse> CreatePropertyAsync(CreatePropertyRequest request, CancellationToken cancellationToken)
+    public async Task<PropertyResponse> CreatePropertyAsync(
+        CreatePropertyRequest request,
+        int ownerUserId,
+        CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var address = new Address
@@ -27,6 +31,7 @@ public class PropertyService
 
         var property = new Property
         {
+            OwnerUserId = ownerUserId,
             Address = address,
             PropertyType = request.PropertyType,
             Area = request.Area,
@@ -43,12 +48,21 @@ public class PropertyService
         return ResponseMapper.ToResponse(property);
     }
 
-    public async Task<PropertyResponse> GetPropertyAsync(int id, CancellationToken cancellationToken)
+    public async Task<PropertyResponse> GetPropertyAsync(
+        int id,
+        int? currentUserId,
+        bool canViewAllProperties,
+        CancellationToken cancellationToken)
     {
         var property = await _context.Properties
             .Include(p => p.Address)
             .AsNoTracking()
-            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(
+                p => p.Id == id
+                    && (canViewAllProperties
+                        || p.Listings.Any(l => l.Status == ListingStatus.Active)
+                        || (currentUserId.HasValue && p.OwnerUserId == currentUserId.Value)),
+                cancellationToken);
 
         if (property is null)
         {
@@ -62,6 +76,7 @@ public class PropertyService
     {
         var query = _context.Properties
             .Include(p => p.Address)
+            .Where(p => p.Listings.Any(l => l.Status == ListingStatus.Active))
             .AsNoTracking();
 
         if (request.PropertyType is not null)

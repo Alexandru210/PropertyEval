@@ -18,6 +18,11 @@ public class CompleteEvaluationEndpoint : Endpoint<CompleteEvaluationRequest, Ev
     {
         Patch("/evaluations/{id}");
         Roles(SystemRoles.Evaluator, SystemRoles.Admin);
+        Summary(s =>
+        {
+            s.Summary = "Complete an evaluation";
+            s.Description = "Records the final evaluated value and notes for an assigned evaluation request.";
+        });
         Description(x => x
             .WithName("CompleteEvaluation")
             .Produces<EvaluationResponse>(StatusCodes.Status200OK)
