@@ -17,6 +17,7 @@ public static class DependencyInjection
         // Add services
         services.AddScoped<UserService>();
         services.AddScoped<PropertyService>();
+        services.AddScoped<PropertyImageService>();
         services.AddScoped<ListingService>();
         services.AddScoped<EvaluationService>();
         services.AddScoped<PropertyValuationService>();

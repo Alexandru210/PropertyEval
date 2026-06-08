@@ -44,6 +44,22 @@ public class GetPropertiesRequest
     public int PageSize { get; set; } = 50;
 }
 
+public record PropertyImageResponse(
+    int Id,
+    int PropertyId,
+    string ImageUrl,
+    string? Description,
+    DateTime UploadedAt
+);
+
+public record PropertyImageUpload(
+    Stream Content,
+    string FileName,
+    string ContentType,
+    long Length,
+    string? Description
+);
+
 public record PropertyResponse(
     int Id,
     AddressResponse Address,
@@ -53,6 +69,7 @@ public record PropertyResponse(
     int Bathrooms,
     int YearBuilt,
     string Description,
+    IReadOnlyList<PropertyImageResponse> Images,
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );

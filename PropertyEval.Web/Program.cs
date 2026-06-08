@@ -1,11 +1,14 @@
 using FastEndpoints;
 using FastEndpoints.Security;
 using FastEndpoints.Swagger;
+using PropertyEval.Application.Interfaces;
 using PropertyEval.Infrastructure;
+using PropertyEval.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PropertyEval";
@@ -53,6 +56,7 @@ var app = builder.Build();
 
 // Middleware pipeline
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("DefaultPolicy");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -26,8 +26,24 @@ internal static class ResponseMapper
             property.Bathrooms,
             property.YearBuilt,
             property.Description,
+            property.Images
+                .OrderBy(image => image.UploadedAt)
+                .ThenBy(image => image.Id)
+                .Select(ToResponse)
+                .ToList(),
             property.CreatedAt,
             property.UpdatedAt
+        );
+    }
+
+    public static PropertyImageResponse ToResponse(PropertyImage image)
+    {
+        return new PropertyImageResponse(
+            image.Id,
+            image.PropertyId,
+            image.ImageUrl,
+            image.Description,
+            image.UploadedAt
         );
     }
 

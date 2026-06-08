@@ -61,6 +61,27 @@ public class GetPropertyValidator : Validator<GetPropertyRequest>
     }
 }
 
+public class UploadPropertyImagesValidator : Validator<UploadPropertyImagesRequest>
+{
+    public UploadPropertyImagesValidator()
+    {
+        RuleFor(x => x.PropertyId)
+            .GreaterThan(0).WithMessage("Property id must be valid.");
+    }
+}
+
+public class DeletePropertyImageValidator : Validator<DeletePropertyImageRequest>
+{
+    public DeletePropertyImageValidator()
+    {
+        RuleFor(x => x.PropertyId)
+            .GreaterThan(0).WithMessage("Property id must be valid.");
+
+        RuleFor(x => x.ImageId)
+            .GreaterThan(0).WithMessage("Image id must be valid.");
+    }
+}
+
 public class GetPropertyValuationValidator : Validator<GetPropertyValuationRequest>
 {
     public GetPropertyValuationValidator()

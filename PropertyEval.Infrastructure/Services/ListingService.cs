@@ -24,6 +24,7 @@ public class ListingService
     {
         var property = await _context.Properties
             .Include(p => p.Address)
+            .Include(p => p.Images)
             .SingleOrDefaultAsync(p => p.Id == request.PropertyId, cancellationToken);
 
         if (property is null)
@@ -132,6 +133,8 @@ public class ListingService
             .Include(l => l.User)
             .Include(l => l.Property)
             .ThenInclude(p => p.Address)
+            .Include(l => l.Property)
+            .ThenInclude(p => p.Images)
             .AsNoTracking();
     }
 

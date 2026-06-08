@@ -56,6 +56,7 @@ public class PropertyService
     {
         var property = await _context.Properties
             .Include(p => p.Address)
+            .Include(p => p.Images)
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 p => p.Id == id
@@ -76,6 +77,7 @@ public class PropertyService
     {
         var query = _context.Properties
             .Include(p => p.Address)
+            .Include(p => p.Images)
             .Where(p => p.Listings.Any(l => l.Status == ListingStatus.Active))
             .AsNoTracking();
 
