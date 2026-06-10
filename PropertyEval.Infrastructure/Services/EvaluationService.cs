@@ -25,6 +25,7 @@ public class EvaluationService
     {
         var property = await _context.Properties
             .Include(p => p.Address)
+            .Include(p => p.Images)
             .SingleOrDefaultAsync(p => p.Id == request.PropertyId, cancellationToken);
 
         if (property is null)
@@ -35,6 +36,11 @@ public class EvaluationService
         if (!canUseAnyProperty && property.OwnerUserId != requestedByUserId)
         {
             throw new ForbiddenAccessException("You can only request evaluations for properties you created.");
+        }
+
+        if (property.Images.Count == 0)
+        {
+            throw new InvalidOperationException("Evaluation requests must include at least one property photo.");
         }
 
         var requestedByUser = await _context.Users
@@ -253,7 +259,9 @@ public class EvaluationService
             .Include(e => e.RequestedByUser)
             .Include(e => e.EvaluatorUser)
             .Include(e => e.Property)
-            .ThenInclude(p => p.Address);
+                .ThenInclude(p => p.Address)
+            .Include(e => e.Property)
+                .ThenInclude(p => p.Images);
 
         return asNoTracking ? query.AsNoTracking() : query;
     }
