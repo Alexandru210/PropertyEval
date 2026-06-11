@@ -81,6 +81,27 @@ public class UserService
         );
     }
 
+    public async Task<IReadOnlyList<UserResponse>> GetEvaluatorsAsync(CancellationToken cancellationToken)
+    {
+        var users = await _context.Users
+            .Include(u => u.Role)
+            .AsNoTracking()
+            .Where(u => u.Role.Name == SystemRoles.Evaluator)
+            .OrderBy(u => u.LastName)
+            .ThenBy(u => u.FirstName)
+            .ThenBy(u => u.Email)
+            .ToListAsync(cancellationToken);
+
+        return users
+            .Select(user => new UserResponse(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                user.Role.Name))
+            .ToList();
+    }
+
     public async Task<UserResponse> UpdateUserRoleAsync(int userId, string roleName, CancellationToken cancellationToken)
     {
         var normalizedRoleName = roleName.Trim();
