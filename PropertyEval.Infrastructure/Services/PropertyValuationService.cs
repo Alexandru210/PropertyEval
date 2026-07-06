@@ -13,6 +13,7 @@ public class PropertyValuationService
 {
     private const int MinimumTrainingRows = 5;
     private const string ModelName = "ML.NET FastTree regression";
+    private const decimal PredictionBandFraction = 0.15m;
 
     private readonly AppDbContext _context;
 
@@ -70,7 +71,7 @@ public class PropertyValuationService
         var output = predictionEngine.Predict(ToModelInput(property));
 
         var predictedValue = ToMoney(output.PredictedValue);
-        var errorMargin = ToMoney(CleanMetric(metrics.RootMeanSquaredError));
+        var errorMargin = Math.Round(predictedValue * PredictionBandFraction, 2);
 
         return new PropertyValuationResponse(
             property.Id,
@@ -161,11 +162,6 @@ public class PropertyValuationService
     private static decimal ToMoney(float value)
     {
         return Math.Round((decimal)Math.Max(0f, value), 2);
-    }
-
-    private static decimal ToMoney(double value)
-    {
-        return Math.Round((decimal)Math.Max(0d, value), 2);
     }
 
     private static double CleanMetric(double value)
