@@ -13,7 +13,7 @@ public class PropertyValuationService
 {
     private const int MinimumTrainingRows = 5;
     private const string ModelName = "ML.NET FastTree regression";
-    private const decimal PredictionBandFraction = 0.15m;
+    private const decimal PredictionBandFraction = 0.10m;
 
     private readonly AppDbContext _context;
 
